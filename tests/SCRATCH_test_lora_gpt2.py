@@ -1,13 +1,12 @@
 import os, json, sys
 from pathlib import Path
 import numpy as np
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from transformers import AutoModelWithLMHead, AutoModelForCausalLM
+from transformers import AutoModelWithLMHead, AutoModelForCausalLM, AutoTokenizer
 
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
 
 # instantiate pretrained model with lora params
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+model = AutoModelForCausalLM.from_pretrained('gpt2')
 print('CHECKING FOR LoRA MODEL PARAMS')
 for n, p in model.named_parameters():
     if 'adapter' in n:
