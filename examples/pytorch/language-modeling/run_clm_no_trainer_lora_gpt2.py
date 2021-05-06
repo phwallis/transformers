@@ -365,16 +365,18 @@ def main():
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
-    no_decay = ["bias", "LayerNorm.weight"]
+    logger.info(f'{"*" * 20}Only LoRA parms will up be update{"*" * 20}')
+    for n, p in model.named_parameters():
+        if 'adapter' in n:
+            logger.info(f'{n}, shape: {p.shape}')
+        else:
+            p.requires_grad = False
+
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "params": [p for n, p in model.named_parameters() if 'adapter' in n],
             "weight_decay": args.weight_decay,
-        },
-        {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-            "weight_decay": 0.0,
-        },
+        }
     ]
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
 
