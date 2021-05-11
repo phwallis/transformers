@@ -27,6 +27,7 @@ import logging
 import math
 import os
 import random
+from pathlib import Path
 
 import datasets
 import torch
@@ -184,6 +185,11 @@ def parse_args():
             assert extension in ["csv", "json", "txt"], "`validation_file` should be a csv, json or txt file."
 
     if args.output_dir is not None:
+        args.output_dir = os.path.join(
+            args.output_dir, 
+            Path(args.model_name_or_path).stem,
+            f'lr_{args.learning_rate:.0e}_l2_{args.weight_decay or 0:.0e}'.replace('e+00', '')
+        )
         os.makedirs(args.output_dir, exist_ok=True)
 
     return args

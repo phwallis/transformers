@@ -277,11 +277,16 @@ class GPT2Attention(nn.Module):
         else:
             query, key, value = self.c_attn(hidden_states).split(self.split_size, dim=2)
 
-        # LoRA adapter output is added to q and v output
+        ###########################################################################################
+        # LoRA adapter output is added to q and v output ##########################################
+        ###########################################################################################
         query +=  adapter_forward(
             hidden_states, self.q_proj_adapter1.weight, self.q_proj_adapter2.weight, 'q')
         value += adapter_forward(
             hidden_states, self.v_proj_adapter1.weight, self.v_proj_adapter2.weight, 'v')
+        ###########################################################################################
+        ###########################################################################################
+        ###########################################################################################
 
         query = self._split_heads(query, self.num_heads, self.head_dim)
         key = self._split_heads(key, self.num_heads, self.head_dim)
