@@ -170,6 +170,9 @@ def parse_args():
     parser.add_argument(
         "--overwrite_cache", type=bool, default=False, help="Overwrite the cached training and evaluation sets"
     )
+    parser.add_argument(
+        "--adapter_dim", type=int, default=16, help="LoRA adapter dim"
+    )
 
     args = parser.parse_args()
 
@@ -269,6 +272,8 @@ def main():
     else:
         config = CONFIG_MAPPING[args.model_type]()
         logger.warning("You are instantiating a new config instance from scratch.")
+
+    config.adapter_dim = args.adapter_dim
 
     if args.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name, use_fast=not args.use_slow_tokenizer)

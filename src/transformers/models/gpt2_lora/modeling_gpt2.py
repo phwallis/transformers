@@ -159,11 +159,11 @@ class GPT2Attention(nn.Module):
         # LoRA factorization matrices (for now this will be applied to q and v only) #############
         ##########################################################################################
         try:
-            self.adapter_dim = config.attn_adapter_dim
+            self.adapter_dim = config.adapter_dim
         except:
             self.adapter_dim = 32
         try:
-            self.adapter_alpha = config.attn_adapter_alpha
+            self.adapter_alpha = config.adapter_alpha
         except:
             self.adapter_alpha = 128
         try:
