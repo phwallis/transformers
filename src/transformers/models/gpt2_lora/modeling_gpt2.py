@@ -170,16 +170,22 @@ class GPT2Attention(nn.Module):
             init_scale = config.init_scale
         except:
             init_scale = 1.0
+        try:
+            self.adapter_type = config.adapter_type
+        except:
+            self.adapter_type = 'v'
 
-        self.q_proj_adapter1 = nn.Linear(self.embed_dim, self.adapter_dim, bias=False)
-        nn.init.normal_(self.q_proj_adapter1.weight, std=0.02 * init_scale)
-        self.q_proj_adapter2 = nn.Linear(self.adapter_dim, self.embed_dim, bias=False)
-        self.q_proj_adapter2.weight.data.zero_()
+        if 'q' in self.adapter_type:
+            self.q_proj_adapter1 = nn.Linear(self.embed_dim, self.adapter_dim, bias=False)
+            nn.init.normal_(self.q_proj_adapter1.weight, std=0.02 * init_scale)
+            self.q_proj_adapter2 = nn.Linear(self.adapter_dim, self.embed_dim, bias=False)
+            self.q_proj_adapter2.weight.data.zero_()
 
-        self.v_proj_adapter1 = nn.Linear(self.embed_dim, self.adapter_dim, bias=False)
-        nn.init.normal_(self.v_proj_adapter1.weight, std=0.02 * init_scale)
-        self.v_proj_adapter2 = nn.Linear(self.adapter_dim, self.embed_dim, bias=False)
-        self.v_proj_adapter2.weight.data.zero_()
+        if 'v' in self.adapter_type:
+            self.v_proj_adapter1 = nn.Linear(self.embed_dim, self.adapter_dim, bias=False)
+            nn.init.normal_(self.v_proj_adapter1.weight, std=0.02 * init_scale)
+            self.v_proj_adapter2 = nn.Linear(self.adapter_dim, self.embed_dim, bias=False)
+            self.v_proj_adapter2.weight.data.zero_()
         ##########################################################################################
         ##########################################################################################
         ##########################################################################################
@@ -280,10 +286,12 @@ class GPT2Attention(nn.Module):
         ###########################################################################################
         # LoRA adapter output is added to q and v output ##########################################
         ###########################################################################################
-        query +=  adapter_forward(
-            hidden_states, self.q_proj_adapter1.weight, self.q_proj_adapter2.weight, 'q')
-        value += adapter_forward(
-            hidden_states, self.v_proj_adapter1.weight, self.v_proj_adapter2.weight, 'v')
+        if 'q' in self.adapter_type:
+            query +=  adapter_forward(
+                hidden_states, self.q_proj_adapter1.weight, self.q_proj_adapter2.weight, 'q')
+        if 'v' in self.adapter_type:
+            value += adapter_forward(
+                hidden_states, self.v_proj_adapter1.weight, self.v_proj_adapter2.weight, 'v')
         ###########################################################################################
         ###########################################################################################
         ###########################################################################################

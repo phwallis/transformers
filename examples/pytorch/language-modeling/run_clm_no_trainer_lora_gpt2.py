@@ -171,7 +171,13 @@ def parse_args():
         "--overwrite_cache", type=bool, default=False, help="Overwrite the cached training and evaluation sets"
     )
     parser.add_argument(
-        "--adapter_dim", type=int, default=16, help="LoRA adapter dim"
+        "--adapter_dim", type=int, default=32, help="LoRA adapter dim"
+    )
+    parser.add_argument(
+        "--adapter_alpha", type=int, default=128, help="LoRA adapter alpha"
+    )
+    parser.add_argument(
+        "--adapter_type", default='v', help="LoRA adapter type (q, v or qv for now)"
     )
 
     args = parser.parse_args()
@@ -191,7 +197,7 @@ def parse_args():
         args.output_dir = os.path.join(
             args.output_dir, 
             Path(args.model_name_or_path).stem,
-            f'lr_{args.learning_rate:.0e}_l2_{args.weight_decay or 0:.0e}'.replace('e+00', '')
+            f'lr_{args.learning_rate:.0e}_l2_{args.weight_decay or 0:.0e}_type_{args.adapter_type}_dim_{args.adapter_dim}'.replace('e+00', '')
         )
         os.makedirs(args.output_dir, exist_ok=True)
 
@@ -274,6 +280,8 @@ def main():
         logger.warning("You are instantiating a new config instance from scratch.")
 
     config.adapter_dim = args.adapter_dim
+    config.adapter_alpha = args.adapter_alpha
+    config.adapter_type = args.adapter_type
 
     if args.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name, use_fast=not args.use_slow_tokenizer)
