@@ -435,42 +435,44 @@ def main():
     progress_bar = tqdm(range(args.max_train_steps), disable=not accelerator.is_local_main_process)
     completed_steps = 0
 
-    for epoch in range(args.num_train_epochs):
-        model.train()
-        for step, batch in enumerate(train_dataloader):
-            outputs = model(**batch)
-            loss = outputs.loss
-            loss = loss / args.gradient_accumulation_steps
-            accelerator.backward(loss)
-            if step % args.gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
-                optimizer.step()
-                lr_scheduler.step()
-                optimizer.zero_grad()
-                progress_bar.update(1)
-                completed_steps += 1
-
-            if completed_steps >= args.max_train_steps:
-                break
-
-        model.eval()
-        losses = []
-        for step, batch in enumerate(eval_dataloader):
-            with torch.no_grad():
+    with open(os.path.join(args.output_dir, 'eval_training_lm.txt'), 'w') as f_log:
+        for epoch in range(args.num_train_epochs):
+            model.train()
+            for step, batch in enumerate(train_dataloader):
                 outputs = model(**batch)
+                loss = outputs.loss
+                loss = loss / args.gradient_accumulation_steps
+                accelerator.backward(loss)
+                if step % args.gradient_accumulation_steps == 0 or step == len(train_dataloader) - 1:
+                    optimizer.step()
+                    lr_scheduler.step()
+                    optimizer.zero_grad()
+                    progress_bar.update(1)
+                    completed_steps += 1
 
-            loss = outputs.loss
-            losses.append(accelerator.gather(loss.repeat(args.per_device_eval_batch_size)))
+                if completed_steps >= args.max_train_steps:
+                    break
 
-        losses = torch.cat(losses)
-        losses = losses[: len(eval_dataset)]
-        perplexity = math.exp(torch.mean(losses))
+            model.eval()
+            losses = []
+            for step, batch in enumerate(eval_dataloader):
+                with torch.no_grad():
+                    outputs = model(**batch)
 
-        logger.info(f"epoch {epoch}: perplexity: {perplexity}")
+                loss = outputs.loss
+                losses.append(accelerator.gather(loss.repeat(args.per_device_eval_batch_size)))
 
-    if args.output_dir is not None:
-        accelerator.wait_for_everyone()
-        unwrapped_model = accelerator.unwrap_model(model)
-        unwrapped_model.save_pretrained(args.output_dir, save_function=accelerator.save)
+            losses = torch.cat(losses)
+            losses = losses[: len(eval_dataset)]
+            perplexity = math.exp(torch.mean(losses))
+
+            logger.info(f"epoch {epoch}: perplexity: {perplexity}")
+            f_log.write(f"epoch {epoch}: perplexity: {perplexity}\n")
+
+        if args.output_dir is not None:
+            accelerator.wait_for_everyone()
+            unwrapped_model = accelerator.unwrap_model(model)
+            unwrapped_model.save_pretrained(args.output_dir, save_function=accelerator.save)
 
 
 if __name__ == "__main__":
