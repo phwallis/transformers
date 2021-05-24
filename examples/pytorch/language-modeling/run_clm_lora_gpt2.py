@@ -25,6 +25,7 @@ import logging
 import math
 import os
 import sys
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -203,7 +204,7 @@ def main():
     if training_args.output_dir is not None:
         training_args.output_dir = os.path.join(
             training_args.output_dir, 
-            Path(training_args.model_name_or_path).stem,
+            Path(model_args.model_name_or_path).stem,
             f'lr_{training_args.learning_rate:.0e}_l2_{training_args.weight_decay or 0:.0e}_type_{model_args.adapter_type}_dim_{model_args.adapter_dim}'.replace('e+00', '')
         )
         os.makedirs(training_args.output_dir, exist_ok=True)
