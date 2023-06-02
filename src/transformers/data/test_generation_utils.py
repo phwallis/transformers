@@ -17,8 +17,8 @@ import unittest
 
 import timeout_decorator
 
-from ..file_utils import cached_property, is_torch_available
 from ..testing_utils import require_torch
+from ..utils import cached_property, is_torch_available
 
 
 if is_torch_available():
@@ -73,7 +73,6 @@ class GenerationUtilsTest(unittest.TestCase):
 
     @timeout_decorator.timeout(10)
     def test_postprocess_next_token_scores_large_bad_words_list(self):
-
         config = self.config
         model = self.model
         # Initialize an input id tensor with batch size 8 and sequence length 12

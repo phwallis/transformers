@@ -17,7 +17,7 @@
 import logging
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
 from transformers.file_utils import add_start_docstrings, add_start_docstrings_to_model_forward
@@ -84,7 +84,10 @@ class AlbertModelWithPabee(AlbertModel):
 
     def log_stats(self):
         avg_inf_layers = self.inference_layers_num / self.inference_instances_num
-        message = f"*** Patience = {self.patience} Avg. Inference Layers = {avg_inf_layers:.2f} Speed Up = {1 - avg_inf_layers / self.config.num_hidden_layers:.2f} ***"
+        message = (
+            f"*** Patience = {self.patience} Avg. Inference Layers = {avg_inf_layers:.2f} Speed Up ="
+            f" {1 - avg_inf_layers / self.config.num_hidden_layers:.2f} ***"
+        )
         print(message)
 
     @add_start_docstrings_to_model_forward(ALBERT_INPUTS_DOCSTRING)
@@ -270,6 +273,7 @@ class AlbertForSequenceClassificationWithPabee(AlbertPreTrainedModel):
 
                 from transformers import AlbertTokenizer
                 from pabee import AlbertForSequenceClassificationWithPabee
+                from torch import nn
                 import torch
 
                 tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')

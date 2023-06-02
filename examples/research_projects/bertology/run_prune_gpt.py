@@ -10,6 +10,7 @@ from datetime import datetime
 
 import numpy as np
 import torch
+from torch import nn
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
 from tqdm import tqdm
 
@@ -193,9 +194,9 @@ def prune_heads(args, model, eval_dataloader, head_mask):
     original_time = datetime.now() - before_time
 
     original_num_params = sum(p.numel() for p in model.parameters())
-    heads_to_prune = dict(
-        (layer, (1 - head_mask[layer].long()).nonzero().squeeze().tolist()) for layer in range(len(head_mask))
-    )
+    heads_to_prune = {
+        layer: (1 - head_mask[layer].long()).nonzero().squeeze().tolist() for layer in range(len(head_mask))
+    }
 
     for k, v in heads_to_prune.items():
         if isinstance(v, int):
@@ -313,8 +314,10 @@ def main():
         "--max_seq_length",
         default=128,
         type=int,
-        help="The maximum total input sequence length after WordPiece tokenization. \n"
-        "Sequences longer than this will be truncated, sequences shorter padded.",
+        help=(
+            "The maximum total input sequence length after WordPiece tokenization. \n"
+            "Sequences longer than this will be truncated, sequences shorter padded."
+        ),
     )
     parser.add_argument("--batch_size", default=1, type=int, help="Batch size.")
 
@@ -352,11 +355,11 @@ def main():
     # Distributed and parallel training
     model.to(args.device)
     if args.local_rank != -1:
-        model = torch.nn.parallel.DistributedDataParallel(
+        model = nn.parallel.DistributedDataParallel(
             model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
         )
     elif args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
+        model = nn.DataParallel(model)
 
     # Print/save training arguments
     os.makedirs(args.output_dir, exist_ok=True)
