@@ -160,6 +160,7 @@ class GPT2Attention(nn.Module):
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
                     merge_weights=False
+                )
             else:
                 self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
             if 'q' in config.lora_modules:
