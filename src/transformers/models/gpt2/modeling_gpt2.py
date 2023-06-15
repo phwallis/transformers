@@ -156,7 +156,7 @@ class GPT2Attention(nn.Module):
         if self.is_cross_attention:
             if 'c' in config.lora_modules or 'k' in config.lora_modules:
                 self.c_attn = lora.MergedLinear(
-                    2 * self.embed_dim, self.embed_dim
+                    2 * self.embed_dim, self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
                     merge_weights=False
