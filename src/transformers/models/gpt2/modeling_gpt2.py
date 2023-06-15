@@ -155,14 +155,14 @@ class GPT2Attention(nn.Module):
 
         if self.is_cross_attention:
             if 'c' in config.lora_modules or 'k' in config.lora_modules:
-                self.c_attn = lora.MergedLinear(
+                self.c_attn = lora.Linear(
                     self.embed_dim, 2 * self.embed_dim, 
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
                 )
             else:
                 self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
             if 'q' in config.lora_modules:
-                self.q_attn = lora.MergedLinear(
+                self.q_attn = lora.Linear(
                     2 * self.embed_dim, self.embed_dim, 
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
                 )
@@ -170,14 +170,14 @@ class GPT2Attention(nn.Module):
                 self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
         else:
             if 'c' in config.lora_modules or 'k' in config.lora_modules:
-                self.c_attn = lora.MergedLinear(
+                self.c_attn = lora.Linear(
                     3 * self.embed_dim, self.embed_dim, 
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
                 )
             else:
                 self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
         if 'attnout' in config.lora_modules:
-            self.c_proj = lora.MergedLinear(
+            self.c_proj = lora.Linear(
                 3 * self.embed_dim, self.embed_dim, 
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
             )
@@ -370,11 +370,11 @@ class GPT2MLP(nn.Module):
         super().__init__()
         embed_dim = config.hidden_size
         if 'mlp' in config.lora_modules:
-            self.c_fc = lora.MergedLinear(
+            self.c_fc = lora.Linear(
                 intermediate_size, embed_dim,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
             )
-            self.c_proj = lora.MergedLinear(
+            self.c_proj = lora.Linear(
                 embed_dim, intermediate_size,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
             )
