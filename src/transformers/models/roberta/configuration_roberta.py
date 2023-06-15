@@ -126,7 +126,7 @@ class RobertaConfig(PretrainedConfig):
         lora_r=0,
         lora_alpha=32,
         lora_dropout=0.0,
-        lora_layers='q,k,v,inter,output,attnout',
+        lora_modules='q,k,v,inter,output,attnout',
         **kwargs,
     ):
         super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
@@ -149,10 +149,10 @@ class RobertaConfig(PretrainedConfig):
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
         self.lora_dropout = lora_dropout
-        self.lora_layers = self.map_lora_layers(lora_layers)
+        self.lora_modules = self.map_lora_modules(lora_modules)
 
     @staticmethod
-    def map_lora_layers(lora_layers):
+    def map_lora_modules(lora_modules):
         """
         Standardize format
         Input (str):
@@ -162,17 +162,17 @@ class RobertaConfig(PretrainedConfig):
         """
         name = ""
         #query,key,value,intermediate,layer.output,attention.output
-        if "query" in lora_layers:
+        if "query" in lora_modules:
             name += "q,"
-        if "key" in lora_layers:
+        if "key" in lora_modules:
             name += "k,"
-        if "value" in lora_layers:
+        if "value" in lora_modules:
             name += "v," 
-        if "intermediate" in lora_layers:
+        if "intermediate" in lora_modules:
             name += "inter,"
-        if "layer.output" in lora_layers: 
+        if "layer.output" in lora_modules: 
             name += "out,"
-        if "attention.output" in lora_layers:
+        if "attention.output" in lora_modules:
             name += "attnout"
         return name
 

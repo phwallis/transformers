@@ -36,6 +36,8 @@ from ...pytorch_utils import softmax_backward_data
 from ...utils import add_code_sample_docstrings, add_start_docstrings, add_start_docstrings_to_model_forward, logging
 from .configuration_deberta_v2 import DebertaV2Config
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -262,7 +264,13 @@ class StableDropout(nn.Module):
 class DebertaV2SelfOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        if 'attout' in config.lora_modules:
+            self.dense = nn.Linear(
+                config.hidden_size, config.hidden_size,
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
+        else:
+            self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.LayerNorm = LayerNorm(config.hidden_size, config.layer_norm_eps)
         self.dropout = StableDropout(config.hidden_dropout_prob)
 
@@ -314,7 +322,13 @@ class DebertaV2Attention(nn.Module):
 class DebertaV2Intermediate(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
+        if 'inter' in config.lora_modules:
+            self.dense = nn.Linear(
+                config.hidden_size, config.intermediate_size,
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
+        else:
+            self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -330,7 +344,13 @@ class DebertaV2Intermediate(nn.Module):
 class DebertaV2Output(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        if ',out' in config.lora_modules:
+            self.dense = nn.Linear(
+                config.intermediate_size, config.hidden_size,
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
+        else:
+            self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
         self.LayerNorm = LayerNorm(config.hidden_size, config.layer_norm_eps)
         self.dropout = StableDropout(config.hidden_dropout_prob)
         self.config = config
@@ -638,9 +658,30 @@ class DisentangledSelfAttention(nn.Module):
         _attention_head_size = config.hidden_size // config.num_attention_heads
         self.attention_head_size = getattr(config, "attention_head_size", _attention_head_size)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
-        self.query_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
-        self.key_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
-        self.value_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
+        if 'q' in config.lora_modules:
+            self.query_proj = nn.Linear(
+                config.hidden_size, self.all_head_size, 
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                bias=True
+            )
+        else:
+            self.query_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
+        if 'q' in config.lora_modules:
+            self.key_proj = nn.Linear(
+                config.hidden_size, self.all_head_size, 
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                bias=True
+            )
+        else:
+            self.key_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
+        if 'v' in config.lora_modules:
+            self.value_proj = nn.Linear(
+                config.hidden_size, self.all_head_size, 
+                lora_r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                bias=True
+            )
+        else:
+            self.value_proj = nn.Linear(config.hidden_size, self.all_head_size, bias=True)
 
         self.share_att_key = getattr(config, "share_att_key", False)
         self.pos_att_type = config.pos_att_type if config.pos_att_type is not None else []

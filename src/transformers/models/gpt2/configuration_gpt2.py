@@ -162,6 +162,10 @@ class GPT2Config(PretrainedConfig):
         eos_token_id=50256,
         scale_attn_by_inverse_layer_idx=False,
         reorder_and_upcast_attn=False,
+        lora_r=0,
+        lora_alpha=32,
+        lora_dropout=0.0,
+        lora_modules='q,k,v,attnout,mlp',
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -189,7 +193,35 @@ class GPT2Config(PretrainedConfig):
         self.bos_token_id = bos_token_id
         self.eos_token_id = eos_token_id
 
+        self.lora_r = lora_r
+        self.lora_alpha = lora_alpha
+        self.lora_dropout = lora_dropout
+        self.lora_modules = self.map_lora_modules(lora_modules)
+
         super().__init__(bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
+
+    @staticmethod
+    def map_lora_modules(lora_modules):
+        """
+        Standardize format
+        Input (str):
+            list of modules to adapt in string format
+        Output (str):
+            formatted list of modules to adapt in comma seperated string format
+        """
+        name = ""
+        #query,key,value,intermediate,layer.output,attention.output
+        if "query" in lora_modules:
+            name += "q,"
+        if "key" in lora_modules:
+            name += "k,"
+        if "value" in lora_modules:
+            name += "v," 
+        if "attention.output" in lora_modules:
+            name += "attnout,"
+        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules:
+            name += "mlp"
+        return name
 
 
 class GPT2OnnxConfig(OnnxConfigWithPast):

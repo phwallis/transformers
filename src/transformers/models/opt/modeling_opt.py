@@ -38,6 +38,8 @@ from ...utils import (
 )
 from .configuration_opt import OPTConfig
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -145,10 +147,38 @@ class OPTAttention(nn.Module):
         self.scaling = self.head_dim**-0.5
         self.is_decoder = is_decoder
 
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        if 'k' in config.lora_modules:   
+            self.k_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=bias
+            )
+        else:
+            self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=bias)
+        if 'v' in config.lora_modules:
+            self.v_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=bias
+            )
+        else:
+            self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=bias)
+        if 'q' in config.lora_modules:
+            self.q_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=bias
+            )
+        else:
+            self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=bias)
+        if 'attnout' in lora_modules:
+            self.out_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=bias
+            )
+        else:
+            self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=bias)
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
         return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -290,8 +320,20 @@ class OPTDecoderLayer(nn.Module):
         self.self_attn_layer_norm = nn.LayerNorm(
             self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine
         )
-        self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
-        self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
+        if 'mlp' in config.lora_modules:
+            self.fc1 = lora.Linear(
+                self.embed_dim, config.ffn_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=config.enable_bias
+            )
+            self.fc2 = lora.Linear(
+                config.ffn_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=config.enable_bias
+            )
+        else:
+            self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
+            self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine)
 
     def forward(

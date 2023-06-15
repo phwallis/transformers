@@ -118,6 +118,10 @@ class OPTConfig(PretrainedConfig):
         eos_token_id=2,
         enable_bias=True,
         layer_norm_elementwise_affine=True,
+        lora_r=0,
+        lora_alpha=32,
+        lora_dropout=0.0,
+        lora_modules='q,k,v,attnout,mlp',
         **kwargs,
     ):
         super().__init__(
@@ -148,3 +152,32 @@ class OPTConfig(PretrainedConfig):
         # with checkpoints that have been fine-tuned before transformers v4.20.1
         # see https://github.com/facebookresearch/metaseq/pull/164
         self._remove_final_layer_norm = _remove_final_layer_norm
+
+        self.lora_r = lora_r
+        self.lora_alpha = lora_alpha
+        self.lora_dropout = lora_dropout
+        self.lora_modules = self.map_lora_modules(lora_modules)
+
+    @staticmethod
+    def map_lora_modules(lora_modules):
+        """
+        Standardize format
+        Input (str):
+            list of modules to adapt in string format
+        Output (str):
+            formatted list of modules to adapt in comma seperated string format
+        """
+        name = ""
+        #query,key,value,intermediate,layer.output,attention.output
+        if "query" in lora_modules:
+            name += "q,"
+        if "key" in lora_modules:
+            name += "k,"
+        if "value" in lora_modules:
+            name += "v," 
+        if "attention.output" in lora_modules:
+            name += "attnout,"
+        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules:
+            name += "mlp"
+        return name
+

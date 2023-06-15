@@ -32,6 +32,8 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import add_start_docstrings, add_start_docstrings_to_model_forward, logging, replace_return_docstrings
 from .configuration_llama import LlamaConfig
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -149,9 +151,26 @@ class LlamaMLP(nn.Module):
         hidden_act: str,
     ):
         super().__init__()
-        self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
-        self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
-        self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+        if 'mlp' in config.lora_modules:
+            self.gate_proj = lora.Linear(
+                hidden_size, intermediate_size, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+            self.down_proj = lora.Linear(
+                intermediate_size, hidden_size, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+            self.up_proj = lora.Linear(
+                hidden_size, intermediate_size, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+            self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
+            self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
         self.act_fn = ACT2FN[hidden_act]
 
     def forward(self, x):
@@ -178,6 +197,40 @@ class LlamaAttention(nn.Module):
         self.k_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
         self.v_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
+
+        if 'k' in config.lora_modules:   
+            self.k_proj = lora.Linear(
+                self.hidden_size, self.num_heads * self.head_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.k_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        if 'v' in config.lora_modules:
+            self.v_proj = lora.Linear(
+                self.hidden_size, self.num_heads * self.head_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.v_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        if 'q' in config.lora_modules:
+            self.q_proj = lora.Linear(
+                self.hidden_size, self.num_heads * self.head_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
+        if 'attnout' in lora_modules:
+            self.o_proj = lora.Linear(
+                self.num_heads * self.head_dim, self.hidden_size, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
+
         self.rotary_emb = LlamaRotaryEmbedding(self.head_dim, max_position_embeddings=self.max_position_embeddings)
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):

@@ -41,6 +41,8 @@ from ...utils import (
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_gptj import GPTJConfig
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -105,10 +107,38 @@ class GPTJAttention(nn.Module):
             )
         self.scale_attn = torch.sqrt(torch.tensor(self.head_dim, dtype=torch.float32)).to(torch.get_default_dtype())
 
-        self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'k' in config.lora_modules:   
+            self.k_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'v' in config.lora_modules:
+            self.v_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'q' in config.lora_modules:
+            self.q_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'attnout' in lora_modules:
+            self.out_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
         self.rotary_dim = config.rotary_dim
         pos_embd_dim = self.rotary_dim or self.embed_dim
         self.embed_positions = create_sinusoidal_positions(max_positions, pos_embd_dim)
@@ -270,9 +300,18 @@ class GPTJMLP(nn.Module):
     def __init__(self, intermediate_size, config):  # in MLP: intermediate_size= 4 * embed_dim
         super().__init__()
         embed_dim = config.n_embd
-
-        self.fc_in = nn.Linear(embed_dim, intermediate_size)
-        self.fc_out = nn.Linear(intermediate_size, embed_dim)
+        if 'mlp' in config.lora_modules:
+            self.fc_in = lora.Linear(
+                embed_dim, intermediate_size,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+            )
+            self.fc_out = lora.Linear(
+                intermediate_size, embed_dim,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+            )
+        else:
+            self.fc_in = nn.Linear(embed_dim, intermediate_size)
+            self.fc_out = nn.Linear(intermediate_size, embed_dim)
 
         self.act = ACT2FN[config.activation_function]
         self.dropout = nn.Dropout(config.resid_pdrop)

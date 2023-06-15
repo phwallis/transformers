@@ -44,6 +44,7 @@ from ...utils import (
     replace_return_docstrings,
 )
 from .configuration_roberta import RobertaConfig
+
 import loralib as lora
 
 
@@ -164,7 +165,7 @@ class RobertaSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        if 'q' in config.lora_layers:
+        if 'q' in config.lora_modules:
             self.query = lora.Linear(
                 config.hidden_size, self.all_head_size, 
                 config.lora_r, config.lora_alpha, config.lora_dropout
@@ -172,7 +173,7 @@ class RobertaSelfAttention(nn.Module):
         else:
             self.query = nn.Linear(config.hidden_size, self.all_head_size)
 
-        if 'k' in config.lora_layers:
+        if 'k' in config.lora_modules:
             self.key = lora.Linear(
                 config.hidden_size, self.all_head_size,
                 config.lora_r, config.lora_alpha, config.lora_dropout
@@ -180,7 +181,7 @@ class RobertaSelfAttention(nn.Module):
         else:
             self.key = nn.Linear(config.hidden_size, self.all_head_size)
 
-        if 'v' in config.lora_layers:
+        if 'v' in config.lora_modules:
             self.value = lora.Linear(
                 config.hidden_size, self.all_head_size,
                 config.lora_r, config.lora_alpha, config.lora_dropout
@@ -309,7 +310,7 @@ class RobertaSelfAttention(nn.Module):
 class RobertaSelfOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if 'attnout' in config.lora_layers:
+        if 'attnout' in config.lora_modules:
             self.dense = lora.Linear(
                 config.hidden_size, config.hidden_size, 
                 config.lora_r, config.lora_alpha, config.lora_dropout
@@ -380,7 +381,7 @@ class RobertaAttention(nn.Module):
 class RobertaIntermediate(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if 'inter' in config.lora_layers:
+        if 'inter' in config.lora_modules:
             self.dense = lora.Linear(
                 config.hidden_size, config.intermediate_size, 
                 config.lora_r, config.lora_alpha, config.lora_dropout
@@ -402,7 +403,7 @@ class RobertaIntermediate(nn.Module):
 class RobertaOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if ',out' in config.lora_layers or config.lora_layers.startswith('out'):
+        if ',out' in config.lora_modules or config.lora_modules.startswith('out'):
             self.dense = lora.Linear(
                 config.intermediate_size, config.hidden_size,
                 config.lora_r, config.lora_alpha, config.lora_dropout

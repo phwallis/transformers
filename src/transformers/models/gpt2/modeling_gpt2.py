@@ -47,6 +47,8 @@ from ...utils import (
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_gpt2 import GPT2Config
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -152,10 +154,33 @@ class GPT2Attention(nn.Module):
         self.reorder_and_upcast_attn = config.reorder_and_upcast_attn
 
         if self.is_cross_attention:
-            self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
-            self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
+            if 'c' in config.lora_modules or 'k' in config.lora_modules:
+                self.c_attn = lora.Conv1D(
+                    2 * self.embed_dim, self.embed_dim,
+                    r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                )
+            else:
+                self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
+            if 'q' in config.lora_modules:
+                self.q_attn = lora.Conv1D(
+                    2 * self.embed_dim, self.embed_dim,
+                    r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                )
+            else:
+                self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
         else:
-            self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
+            if 'c' in config.lora_modules or 'k' in config.lora_modules:
+                self.c_attn = lora.Conv1D(
+                    3 * self.embed_dim, self.embed_dim,
+                    r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+                )
+            else:
+                self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
+        if 'attnout' in config.lora_modules:
+            self.c_proj = lora.Conv1D(
+                3 * self.embed_dim, self.embed_dim,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
         self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
 
         self.attn_dropout = nn.Dropout(config.attn_pdrop)
@@ -344,8 +369,18 @@ class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config):
         super().__init__()
         embed_dim = config.hidden_size
-        self.c_fc = Conv1D(intermediate_size, embed_dim)
-        self.c_proj = Conv1D(embed_dim, intermediate_size)
+        if 'mlp' in config.lora_modules:
+            self.c_fc = lora.Conv1D(
+                intermediate_size, embed_dim,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
+            self.c_proj = lora.Conv1D(
+                embed_dim, intermediate_size,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout
+            )
+        else:
+            self.c_fc = Conv1D(intermediate_size, embed_dim)
+            self.c_proj = Conv1D(embed_dim, intermediate_size)
         self.act = ACT2FN[config.activation_function]
         self.dropout = nn.Dropout(config.resid_pdrop)
 

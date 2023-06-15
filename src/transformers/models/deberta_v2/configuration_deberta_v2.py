@@ -130,6 +130,10 @@ class DebertaV2Config(PretrainedConfig):
         pos_att_type=None,
         pooler_dropout=0,
         pooler_hidden_act="gelu",
+        lora_r=0,
+        lora_alpha=32,
+        lora_dropout=0.0,
+        lora_modules='q,k,v,inter,output,attnout',
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -160,6 +164,36 @@ class DebertaV2Config(PretrainedConfig):
         self.pooler_hidden_size = kwargs.get("pooler_hidden_size", hidden_size)
         self.pooler_dropout = pooler_dropout
         self.pooler_hidden_act = pooler_hidden_act
+
+        self.lora_r = lora_r
+        self.lora_alpha = lora_alpha
+        self.lora_dropout = lora_dropout
+        self.lora_modules = self.map_lora_modules(lora_modules)
+
+    @staticmethod
+    def map_lora_modules(lora_modules):
+        """
+        Standardize format
+        Input (str):
+            list of modules to adapt in string format
+        Output (str):
+            formatted list of modules to adapt in comma seperated string format
+        """
+        name = ""
+        #query,key,value,intermediate,layer.output,attention.output
+        if "query" in lora_modules:
+            name += "q,"
+        if "key" in lora_modules:
+            name += "k,"
+        if "value" in lora_modules:
+            name += "v," 
+        if "intermediate" in lora_modules:
+            name += "inter,"
+        if "layer.output" in lora_modules: 
+            name += "out,"
+        if "attention.output" in lora_modules:
+            name += "attnout"
+        return name
 
 
 class DebertaV2OnnxConfig(OnnxConfig):

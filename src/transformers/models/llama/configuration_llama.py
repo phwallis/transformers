@@ -96,6 +96,10 @@ class LlamaConfig(PretrainedConfig):
         bos_token_id=1,
         eos_token_id=2,
         tie_word_embeddings=False,
+        lora_r=0,
+        lora_alpha=32,
+        lora_dropout=0.0,
+        lora_modules='q,k,v,attnout,mlp',
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -108,6 +112,12 @@ class LlamaConfig(PretrainedConfig):
         self.initializer_range = initializer_range
         self.rms_norm_eps = rms_norm_eps
         self.use_cache = use_cache
+
+        self.lora_r = lora_r
+        self.lora_alpha = lora_alpha
+        self.lora_dropout = lora_dropout
+        self.lora_modules = self.map_lora_modules(lora_modules)
+
         super().__init__(
             pad_token_id=pad_token_id,
             bos_token_id=bos_token_id,
@@ -115,3 +125,26 @@ class LlamaConfig(PretrainedConfig):
             tie_word_embeddings=tie_word_embeddings,
             **kwargs,
         )
+
+    @staticmethod
+    def map_lora_modules(lora_modules):
+        """
+        Standardize format
+        Input (str):
+            list of modules to adapt in string format
+        Output (str):
+            formatted list of modules to adapt in comma seperated string format
+        """
+        name = ""
+        #query,key,value,intermediate,layer.output,attention.output
+        if "query" in lora_modules:
+            name += "q,"
+        if "key" in lora_modules:
+            name += "k,"
+        if "value" in lora_modules:
+            name += "v," 
+        if "attention.output" in lora_modules:
+            name += "attnout,"
+        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules:
+            name += "mlp"
+        return name
