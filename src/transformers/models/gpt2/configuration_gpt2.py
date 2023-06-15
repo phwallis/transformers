@@ -221,7 +221,7 @@ class GPT2Config(PretrainedConfig):
             name += "inter,"
         if "attention.output" in lora_modules and "attnout," not in lora_modules:
             name += "attnout,"
-        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules and "mlp" not in lora_modules:
+        if ("mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules) and "mlp" not in lora_modules:
             name += "mlp"
         return name
 
