@@ -179,19 +179,19 @@ class DebertaV2Config(PretrainedConfig):
         Output (str):
             formatted list of modules to adapt in comma seperated string format
         """
-        name = ""
+        name = lora_modules
         #query,key,value,intermediate,layer.output,attention.output
-        if "query" in lora_modules:
-            name += "q,"
-        if "key" in lora_modules:
+        if "query" in lora_modules and "q," not in lora_modules:
+            name = "q," + name
+        if "key" in lora_modules and "k," not in lora_modules:
             name += "k,"
-        if "value" in lora_modules:
+        if "value" in lora_modules and "v," not in lora_modules:
             name += "v," 
-        if "intermediate" in lora_modules:
+        if "intermediate" in lora_modules and "inter," not in lora_modules:
             name += "inter,"
-        if "layer.output" in lora_modules: 
+        if "layer.output" in lora_modules and "out," not in lora_modules: 
             name += "out,"
-        if "attention.output" in lora_modules:
+        if "attention.output" in lora_modules and "attnout" not in lora_modules:
             name += "attnout"
         return name
 

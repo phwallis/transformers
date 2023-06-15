@@ -167,17 +167,19 @@ class OPTConfig(PretrainedConfig):
         Output (str):
             formatted list of modules to adapt in comma seperated string format
         """
-        name = ""
+        name = lora_modules
         #query,key,value,intermediate,layer.output,attention.output
-        if "query" in lora_modules:
-            name += "q,"
-        if "key" in lora_modules:
+        if "query" in lora_modules and "q," not in lora_modules:
+            name = "q," + name
+        if "key" in lora_modules and "k," not in lora_modules:
             name += "k,"
-        if "value" in lora_modules:
+        if "value" in lora_modules and "v," not in lora_modules:
             name += "v," 
-        if "attention.output" in lora_modules:
-            name += "attnout,"
-        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules:
+        if "intermediate" in lora_modules and "inter," not in lora_modules:
+            name += "inter,"
+        if "attention.output" in lora_modules and "attnout" not in lora_modules:
+            name += "attnout"
+        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules and "mlp" not in lora_modules:
             name += "mlp"
         return name
 
