@@ -159,6 +159,7 @@ class GPT2Attention(nn.Module):
                     2 * self.embed_dim, self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
+                    enable_lora=[True, True, True],
                     merge_weights=False
                 )
             else:
@@ -168,6 +169,7 @@ class GPT2Attention(nn.Module):
                     self.embed_dim, 2 * self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
+                    enable_lora=[True, True, True],
                     merge_weights=False
                 )
             else:
@@ -178,6 +180,7 @@ class GPT2Attention(nn.Module):
                     self.embed_dim, 3 * self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
+                    enable_lora=[True, True, True],
                     merge_weights=False
                 )
             else:
@@ -187,6 +190,7 @@ class GPT2Attention(nn.Module):
                 self.embed_dim, 3 * self.embed_dim,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
+                enable_lora=[True, True, True],
                 merge_weights=False
             )
         self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
@@ -382,12 +386,14 @@ class GPT2MLP(nn.Module):
                 intermediate_size, embed_dim,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
+                enable_lora=[True, True, True],
                 merge_weights=False
             )
             self.c_proj = lora.MergedLinear(
                 embed_dim, intermediate_size,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
+                enable_lora=[True, True, True],
                 merge_weights=False
             )
         else:

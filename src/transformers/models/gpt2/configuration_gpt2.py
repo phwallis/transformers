@@ -165,7 +165,7 @@ class GPT2Config(PretrainedConfig):
         lora_r=0,
         lora_alpha=32,
         lora_dropout=0.0,
-        lora_modules='q,k,v,attnout,mlp',
+        lora_modules='c,k,v,attnout,mlp',
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -219,8 +219,8 @@ class GPT2Config(PretrainedConfig):
             name += "v," 
         if "intermediate" in lora_modules and "inter," not in lora_modules:
             name += "inter,"
-        if "attention.output" in lora_modules and "attnout" not in lora_modules:
-            name += "attnout"
+        if "attention.output" in lora_modules and "attnout," not in lora_modules:
+            name += "attnout,"
         if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules and "mlp" not in lora_modules:
             name += "mlp"
         return name
