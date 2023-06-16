@@ -131,7 +131,7 @@ class GPTJAttention(nn.Module):
             )
         else:
             self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        if 'attnout' in lora_modules:
+        if 'attnout' in config.lora_modules:
             self.out_proj = lora.Linear(
                 self.embed_dim, self.embed_dim, 
                 r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
