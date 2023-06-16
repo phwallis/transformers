@@ -121,6 +121,10 @@ class GPTNeoConfig(PretrainedConfig):
         use_cache=True,
         bos_token_id=50256,
         eos_token_id=50256,
+        lora_r=0,
+        lora_alpha=32,
+        lora_dropout=0.0,
+        lora_modules='q,k,v,attnout,mlp',
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -141,6 +145,11 @@ class GPTNeoConfig(PretrainedConfig):
 
         self.bos_token_id = bos_token_id
         self.eos_token_id = eos_token_id
+
+        self.lora_r = lora_r
+        self.lora_alpha = lora_alpha
+        self.lora_dropout = lora_dropout
+        self.lora_modules = self.map_lora_modules(lora_modules)
 
         self.attention_types = attention_types
         self.attention_layers = self.expand_attention_types_params(attention_types)
@@ -164,6 +173,31 @@ class GPTNeoConfig(PretrainedConfig):
             for _ in range(item[1]):
                 attentions.extend(item[0])
         return attentions
+
+    @staticmethod
+    def map_lora_modules(lora_modules):
+        """
+        Standardize format
+        Input (str):
+            list of modules to adapt in string format
+        Output (str):
+            formatted list of modules to adapt in comma seperated string format
+        """
+        name = lora_modules
+        #query,key,value,intermediate,layer.output,attention.output
+        if "query" in lora_modules and "q," not in lora_modules:
+            name = "q," + name
+        if "key" in lora_modules and "k," not in lora_modules:
+            name += "k,"
+        if "value" in lora_modules and "v," not in lora_modules:
+            name += "v," 
+        if "intermediate" in lora_modules and "inter," not in lora_modules:
+            name += "inter,"
+        if "attention.output" in lora_modules and "attnout" not in lora_modules:
+            name += "attnout,"
+        if "mlp" in lora_modules or "ff" in lora_modules or "feedforward" in lora_modules and "mlp" not in lora_modules:
+            name += "mlp"
+        return name
 
 
 def custom_unfold(input, dimension, size, step):

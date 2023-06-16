@@ -36,6 +36,8 @@ from ...modeling_utils import PreTrainedModel
 from ...utils import add_code_sample_docstrings, add_start_docstrings, add_start_docstrings_to_model_forward, logging
 from .configuration_gpt_neo import GPTNeoConfig
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
@@ -159,10 +161,38 @@ class GPTNeoSelfAttention(nn.Module):
                 f" {self.num_heads})."
             )
 
-        self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
+        if 'k' in config.lora_modules:   
+            self.k_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.k_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'v' in config.lora_modules:
+            self.v_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.v_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'q' in config.lora_modules:
+            self.q_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+        if 'attnout' in config.lora_modules:
+            self.out_proj = lora.Linear(
+                self.embed_dim, self.embed_dim, 
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+                bias=False
+            )
+        else:
+            self.out_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
 
     def _split_heads(self, tensor, num_heads, attn_head_size):
         """
@@ -290,8 +320,19 @@ class GPTNeoMLP(nn.Module):
     def __init__(self, intermediate_size, config):  # in MLP: intermediate_size= 4 * hidden_size
         super().__init__()
         embed_dim = config.hidden_size
-        self.c_fc = nn.Linear(embed_dim, intermediate_size)
-        self.c_proj = nn.Linear(intermediate_size, embed_dim)
+        if 'mlp' in config.lora_modules:
+            self.fc_in = lora.Linear(
+                embed_dim, intermediate_size,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+            )
+            self.fc_out = lora.Linear(
+                intermediate_size, embed_dim,
+                r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
+            )
+        else:
+            self.c_fc = nn.Linear(embed_dim, intermediate_size)
+            self.c_proj = nn.Linear(intermediate_size, embed_dim)
+
         self.act = ACT2FN[config.activation_function]
         self.dropout = nn.Dropout(float(config.resid_dropout))
 
