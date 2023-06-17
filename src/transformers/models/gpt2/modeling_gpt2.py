@@ -156,7 +156,7 @@ class GPT2Attention(nn.Module):
         if self.is_cross_attention:
             if 'c' in config.lora_modules or 'k' in config.lora_modules:
                 self.c_attn = lora.MergedLinear(
-                    2 * self.embed_dim, self.embed_dim,
+                    self.embed_dim, 2 * self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
                     enable_lora=[True, True, True],
@@ -166,7 +166,7 @@ class GPT2Attention(nn.Module):
                 self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
             if 'q' in config.lora_modules:
                 self.q_attn = lora.MergedLinear(
-                    self.embed_dim, 2 * self.embed_dim,
+                    self.embed_dim, self.embed_dim,
                     config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                     fan_in_fan_out=True,
                     enable_lora=[True, True, True],
@@ -187,7 +187,7 @@ class GPT2Attention(nn.Module):
                 self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
         if 'attnout' in config.lora_modules:
             self.c_proj = lora.MergedLinear(
-                self.embed_dim, 3 * self.embed_dim,
+                self.embed_dim, self.embed_dim,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
                 enable_lora=[True, True, True],
@@ -383,14 +383,14 @@ class GPT2MLP(nn.Module):
         embed_dim = config.hidden_size
         if 'mlp' in config.lora_modules:
             self.c_fc = lora.MergedLinear(
-                intermediate_size, embed_dim,
+                embed_dim, intermediate_size,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
                 enable_lora=[True, True, True],
                 merge_weights=False
             )
             self.c_proj = lora.MergedLinear(
-                embed_dim, intermediate_size,
+                intermediate_size, embed_dim,
                 config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
                 fan_in_fan_out=True,
                 enable_lora=[True, True, True],
