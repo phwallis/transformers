@@ -22,6 +22,8 @@ from ...configuration_utils import PretrainedConfig
 from ...onnx import OnnxConfigWithPast
 from ...utils import logging
 
+import loralib as lora
+
 
 logger = logging.get_logger(__name__)
 
