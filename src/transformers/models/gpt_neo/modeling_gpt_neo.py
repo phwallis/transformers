@@ -321,11 +321,11 @@ class GPTNeoMLP(nn.Module):
         super().__init__()
         embed_dim = config.hidden_size
         if 'mlp' in config.lora_modules:
-            self.fc_in = lora.Linear(
+            self.c_fc = lora.Linear(
                 embed_dim, intermediate_size,
                 r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
             )
-            self.fc_out = lora.Linear(
+            self.c_proj = lora.Linear(
                 intermediate_size, embed_dim,
                 r=config.lora_r, lora_alpha=config.lora_alpha, lora_dropout=config.lora_dropout,
             )
